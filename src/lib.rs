@@ -8,11 +8,15 @@ pub struct Query {
 }
 
 impl Query {
-    pub fn build(args: &[String]) -> Result<Query, &'static str> {
-        if args.len() == 1 || args.len() > 2 {
-            return Err("Invalid Query");
-        }
-        let source = args[1].clone();
+    pub fn build(
+        mut args: impl Iterator<Item = String>,
+    ) -> Result<Query, &'static str> {
+        args.next();
+        
+        let source = match args.next() {
+            Some(arg) => arg,
+            None => return Err("No source to copy from"),
+        };
 
         Ok(Query { source })
     }

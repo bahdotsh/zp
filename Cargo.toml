@@ -2,8 +2,14 @@
 name = "cpy"
 version = "0.1.0"
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+description = "Copy the contents of the source file to the clipboard, allowing users to easily paste the contents into another file or program."
+documentation = "https://github.com/bahdotsh/cpy"
+homepage = "https://github.com/bahdotsh/cpy"
+repository = "https://github.com/bahdotsh/cpy"
+keywords = ["copy", "cmd", "copy-to-clipboard"]
+categories = ["command-line-utilities", "text-processing"]
+license = "Unlicense OR MIT"
+exclude = ["HomebrewFormula"]
 
 [dependencies]
 cli-clipboard = "0.4.0"

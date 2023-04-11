@@ -1,4 +1,4 @@
-use cli_clipboard:: {ClipboardProvider, ClipboardContext};
+use cli_clipboard::{ClipboardProvider, ClipboardContext};
 use std::error::Error;
 use std::fs;
 
@@ -30,7 +30,9 @@ pub fn run(query: Query) -> Result<(), Box<dyn Error>> {
 }
 
 pub fn cpy<'a>(contents: &'a str) -> Result<(), Box<dyn Error>> {
-    cli_clipboard::set_contents(contents.to_owned())
+    let mut ctx = ClipboardContext::new().unwrap();
+     
+    ctx.set_contents(contents.to_owned())
 }
 
 #[cfg(test)]

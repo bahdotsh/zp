@@ -1,4 +1,4 @@
-use cli_clipboard::ClipboardContext;
+use cli_clipboard:: {ClipboardProvider, ClipboardContext};
 use std::error::Error;
 use std::fs;
 
@@ -40,6 +40,7 @@ mod tests {
     #[test]
     fn one_result() {
         let mut ctx = ClipboardContext::new().unwrap();
+        let _ = cpy("Hello, world!");
         assert_eq!(ctx.get_contents().unwrap(), "Hello, world!");
     }
 }

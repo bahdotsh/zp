@@ -20,7 +20,10 @@ It's best to use rustup to get setup with a Rust toolchain, then you can run:
 `cargo install zp`
 
 ### Homebrew
-`brew install zp`
+```
+brew tap bahdotsh/zp
+brew install zp
+```
 
 ### From source
 ```

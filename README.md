@@ -1,1 +1,16 @@
 # cpy
+
+The "cpy" command is a custom command that takes one argument, which is the name of the source file. The purpose of this command is to copy the contents of the source file to the clipboard, allowing users to easily paste the contents into another file or program.
+
+To use the "cpy" command, simply open your terminal or command prompt and type "cpy" followed by the name of the source file. For example:
+
+```
+cpy myFile.txt
+
+```
+
+This will copy the contents of "myFile.txt" to the clipboard.
+
+The "cpy" command is particularly useful for quickly copying text or data from one file to another without having to manually select and copy the text. This can save time and effort, especially when working with large or complex files.
+
+

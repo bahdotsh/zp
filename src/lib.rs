@@ -41,8 +41,7 @@ mod tests {
 
     #[test]
     fn one_result() {
-        let mut ctx = ClipboardContext::new().unwrap();
         let _ = cpy("Hello, world!");
-        assert_eq!(ctx.get_contents().unwrap(), "Hello, world!");
+        assert_eq!(cli_clipboard::get_contents().unwrap(), "Hello, world!");
     }
 }

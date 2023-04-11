@@ -1,5 +1,5 @@
 [package]
-name = "sucat"
+name = "cpy"
 version = "0.1.0"
 edition = "2021"
 

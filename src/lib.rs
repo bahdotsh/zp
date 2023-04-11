@@ -1,4 +1,4 @@
-use cli_clipboard;
+use cli_clipboard::ClipboardContext;
 use std::error::Error;
 use std::fs;
 

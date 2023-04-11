@@ -17,15 +17,15 @@ The "zp" command is particularly useful for quickly copying text or data from on
 
 It's best to use rustup to get setup with a Rust toolchain, then you can run:
 
-`cargo install atuin`
+`cargo install zp`
 
 ### Homebrew
-`brew install atuin`
+`brew install zp`
 
 ### From source
 ```
-git clone https://github.com/ellie/atuin.git
-cd atuin
+git clone https://github.com/bahdotsh/zp.git
+cd zp
 cargo install --path .
 ```
 

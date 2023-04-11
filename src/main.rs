@@ -1,4 +1,4 @@
-use cpy::Query;
+use zp::Query;
 use std::env;
 use std::process;
 
@@ -8,7 +8,7 @@ fn main() {
         process::exit(1);
     });
 
-    if let Err(e) = cpy::run(query) {
+    if let Err(e) = zp::run(query) {
         eprintln!("Application error: {e}");
         process::exit(1);
     }

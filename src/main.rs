@@ -1,33 +1,17 @@
+use cpy::Query;
 use std::env;
-use cli_clipboard;
-use std::fs;
+use std::process;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    
-    let query = Query::new(&args);
 
+    let query = Query::build(&args).unwrap_or_else(|err| {
+        println!("Problem parsing query: {err}");
+        process::exit(1);
+    });
 
-    let contents = fs::read_to_string(query.source)
-        .expect("Should have been able to read the file");
-
-    cli_clipboard::set_contents(contents.to_owned()).unwrap();
-
-}
-
-#[derive(Debug)]
-struct Query {
-    source: String,
-}
-
-impl Query {
-    fn new(args: &[String]) -> Query {
-        if args.len() == 1 || args.len() > 2{
-            panic!("Invalid Query");
-        }
-            let source = args[1].clone();
-
-            Query { source }
+    if let Err(e) = cpy::run(query) {
+        println!("Application error: {e}");
+        process::exit(1);
     }
 }
-

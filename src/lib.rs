@@ -40,7 +40,7 @@ mod tests {
     #[test]
     fn one_result() {
         let e = cpy("Hello, world!");
-        eprintln!("Application error: {e}")
+        eprintln!("Application error: {e}");
         assert_eq!(cli_clipboard::get_contents().unwrap(), "Hello, world!".to_owned());
     }
 }

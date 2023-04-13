@@ -1,7 +1,6 @@
 use arboard::Clipboard;
-use std::error::Error;
-use std::fs;
-use std::path::Path;
+use std::fs::File;
+use std::io::Read;
 use std::process;
 
 #[derive(Debug)]
@@ -18,28 +17,29 @@ impl Query {
             None => return Err("No source to copy from"),
         };
 
-        if let Err(error) = Query::check_file_path(&source) {
-            return Err(error);
-        }
-
         Ok(Query { source })
-    }
-
-    pub fn check_file_path(file_path: &str) -> Result<(), &'static str> {
-        if Path::new(file_path).is_dir() {
-            return Err("Received path instead of a file location");
-        }
-        if !Path::new(file_path).is_file() {
-            return Err("File does not exist");
-        }
-        Ok(())
     }
 }
 
-pub fn run(query: Query) -> Result<(), Box<dyn Error>> {
-    let contents =
-        fs::read_to_string(query.source).expect("Should have been able to read the file");
+fn read_file_content(file_path: &str) -> Result<String, std::io::Error> {
+    let mut file = match File::open(file_path) {
+        Ok(content) => content,
+        Err(err) => {
+            return Err(err);
+        }
+    };
+    let mut data = String::new();
+    match file.read_to_string(&mut data) {
+        Ok(_) => return Ok(data),
+        Err(err) => return Err(err),
+    }
+}
 
+pub fn run(query: Query) -> Result<(), std::io::Error> {
+    let contents = match read_file_content(&query.source) {
+        Ok(data) => data,
+        Err(error) => return Err(error),
+    };
     cpy(&contents);
 
     Ok(())

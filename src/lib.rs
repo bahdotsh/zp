@@ -136,7 +136,7 @@ mod tests {
     #[test]
     fn one_result() {
         let mut clipboard = Clipboard::new().unwrap();
-        let _ = cpy("Hello, world!");
+        let _ = cpy("Hello, world!", 0 as usize, 0 as usize);
         assert_eq!(clipboard.get_text().unwrap(), "Hello, world!");
     }
 }

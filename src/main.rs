@@ -1,11 +1,11 @@
-use zp::Query;
+use clap::Parser;
 use std::env;
 use std::process;
-use clap::Parser;
+use zp::Query;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
-/// Copy file contents 
+/// Copy file contents
 #[derive(Parser)]
 #[command(
     author = "Gokul <@bahdotsh>",

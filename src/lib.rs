@@ -1,36 +1,77 @@
 use arboard::Clipboard;
-use std::fs::File;
-use std::process;
-use std::io::{self, Read};
 use atty::Stream;
+use std::fs::File;
+use std::io::{self, Read};
+use std::process;
 
 #[derive(Debug)]
 pub struct Query {
     pub source: String,
+    pub start: usize,
+    pub end: usize,
 }
 
 impl Query {
     pub fn build(mut args: impl Iterator<Item = String>) -> Result<Query, &'static str> {
         args.next();
+        if atty::is(Stream::Stdout) && atty::is(Stream::Stderr) && atty::isnt(Stream::Stdin) {
+            let mut buffer = io::stdin();
+            let mut contents = String::new();
+            let start = match args.next() {
+                Some(arg) => arg,
+                None => "0".to_string(),
+            }
+            .parse::<usize>()
+            .unwrap_or_else(|err| {
+                eprintln!("Parsing error! {} ", err);
+                process::exit(1);
+            });
+
+            let end = match args.next() {
+                Some(arg) => arg,
+                None => "0".to_string(),
+            }
+            .parse::<usize>()
+            .unwrap_or_else(|err| {
+                eprintln!("Parsing error! {}", err);
+                process::exit(1);
+            });
+
+            while let Ok(n) = buffer.read_to_string(&mut contents) {
+                if n == 0 {
+                    break;
+                }
+            }
+            cpy(&contents, start as usize, end as usize);
+            process::exit(1);
+        }
 
         let source = match args.next() {
-            Some(arg) => arg,
-            None => { 
-                if atty::is(Stream::Stdout) && atty::is(Stream::Stderr) && atty::isnt(Stream::Stdin) {
-                    let mut buffer = io::stdin();
-                    let mut contents = String::new();
-                    while let Ok(n) = buffer.read_to_string(&mut contents) {
-                        if n == 0 {break;}
-                     }
-                    cpy(&contents);
-                    process::exit(1);
-                }else{
-                    return Err("No source to copy from");
-                }
-            },
+            Some(args) => args,
+            None => return Err("No source to copy from"),
         };
 
-        Ok(Query { source })
+        let start = match args.next() {
+            Some(arg) => arg,
+            None => "0".to_string(),
+        }
+        .parse::<usize>()
+        .unwrap_or_else(|err| {
+            eprintln!("Parsing error! {} ", err);
+            process::exit(1);
+        });
+
+        let end = match args.next() {
+            Some(arg) => arg,
+            None => "0".to_string(),
+        }
+        .parse::<usize>()
+        .unwrap_or_else(|err| {
+            eprintln!("Parsing error! {}", err);
+            process::exit(1);
+        });
+
+        Ok(Query { source, start, end })
     }
 }
 
@@ -53,18 +94,39 @@ pub fn run(query: Query) -> Result<(), std::io::Error> {
         Ok(data) => data,
         Err(error) => return Err(error),
     };
-    cpy(&contents);
+    cpy(&contents, query.start, query.end);
 
     Ok(())
 }
 
-pub fn cpy<'a>(contents: &'a str) {
+pub fn cpy<'a>(contents: &'a str, start: usize, end: usize) {
     let mut clipboard = Clipboard::new().unwrap();
 
-    clipboard.set_text(contents).unwrap_or_else(|err| {
-        eprintln!("Couldn't copy to clipboard: {}", err);
-        process::exit(1);
-    });
+    if end == 0 as usize {
+        if start == 0 as usize {
+            clipboard.set_text(contents).unwrap_or_else(|err| {
+                eprintln!("Couldn't copy to clipboard: {}", err);
+                process::exit(1);
+            });
+        } else {
+            let words: Vec<&str> = contents.split_whitespace().take(start).collect();
+            clipboard.set_text(words.join(" ")).unwrap_or_else(|err| {
+                eprintln!("Couldn't copy to clipboard: {}", err);
+                process::exit(1);
+            });
+        }
+    } else {
+        let lines: Vec<&str> = contents
+            .lines()
+            .enumerate()
+            .filter(|&(i, _)| i >= start && i <= end)
+            .map(|(_, line)| line)
+            .collect();
+        clipboard.set_text(lines.join("\n")).unwrap_or_else(|err| {
+            eprintln!("Couldn't copy to clipboard: {}", err);
+            process::exit(1);
+        });
+    }
 }
 
 #[cfg(test)]

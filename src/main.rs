@@ -1,11 +1,10 @@
-use zp::Query;
+use clap::Parser;
 use std::env;
 use std::process;
-use clap::Parser;
+use zp::Query;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
-/// Copy file contents 
 #[derive(Parser)]
 #[command(
     author = "Gokul <@bahdotsh>",
@@ -14,7 +13,10 @@ const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 )]
 struct Zp {
-    file_name: Vec<String>,
+    ///
+    file_name: Option<String>,
+    start: Option<usize>,
+    end: Option<usize>,
 }
 
 fn main() {

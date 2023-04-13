@@ -1,8 +1,8 @@
 [package]
 name = "zp"
-version = "0.2.0"
+version = "1.0.0"
 edition = "2021"
-description = "Copy the contents of the source file to the clipboard, allowing users to easily paste the contents into another file or program."
+description = "Copy the contents of the source file or the std output buffer to the clipboard, allowing users to easily paste the contents into another file or program."
 documentation = "https://github.com/bahdotsh/zp"
 homepage = "https://github.com/bahdotsh/zp"
 repository = "https://github.com/bahdotsh/zp"

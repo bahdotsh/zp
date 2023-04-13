@@ -3,7 +3,6 @@ use atty::Stream;
 use std::fs::File;
 use std::process;
 use std::io::{self, Read};
-use atty::Stream;
 
 #[derive(Debug)]
 pub struct Query {

@@ -1,6 +1,7 @@
-use cli_clipboard;
+use arboard::Clipboard;
 use std::error::Error;
 use std::fs;
+use std::process;
 
 #[derive(Debug)]
 pub struct Query {
@@ -26,11 +27,19 @@ pub fn run(query: Query) -> Result<(), Box<dyn Error>> {
     let contents =
         fs::read_to_string(query.source).expect("Should have been able to read the file");
 
-    cpy(&contents)
+    cpy(&contents);
+
+    Ok(())
 }
 
-pub fn cpy<'a>(contents: &'a str) -> Result<(), Box<dyn Error>> {
-    cli_clipboard::set_contents(contents.to_owned())
+pub fn cpy<'a>(contents: &'a str) {
+    let mut clipboard = Clipboard::new().unwrap();
+
+    clipboard.set_text(contents).unwrap_or_else(|err| {
+        eprintln!("Couldn't copy to clipboard: {}", err);
+        process::exit(1);
+    });
+
 }
 
 #[cfg(test)]
@@ -40,6 +49,6 @@ mod tests {
     #[test]
     fn one_result() {
         let _ = cpy("Hello, world!");
-        assert_eq!(cli_clipboard::get_contents().unwrap(), "Hello, world!");
+        assert_eq!(Clipboard::get_text().unwrap(), "Hello, world!");
     }
 }

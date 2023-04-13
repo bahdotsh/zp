@@ -14,8 +14,7 @@ const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 )]
 struct Zp {
-    ///Name of the file to copy from.
-    file_name: String,
+    file_name: Vec<String>,
 }
 
 fn main() {

@@ -2,6 +2,8 @@ use arboard::Clipboard;
 use std::fs::File;
 use std::io::Read;
 use std::process;
+use std::io::{self, Read, BufRead};
+use atty::Stream;
 
 #[derive(Debug)]
 pub struct Query {
@@ -14,7 +16,19 @@ impl Query {
 
         let source = match args.next() {
             Some(arg) => arg,
-            None => return Err("No source to copy from"),
+            None => { 
+                if atty::is(Stream::Stdout) {
+                    let mut buffer = io::stdin();
+                    let mut contents = String::new();
+                    while let Ok(n) = buffer.read_to_string(&mut contents) {
+                        if n == 0 {break;}
+                     }
+                    cpy(&contents);
+                    return Err("stdin");
+                }else{
+                    return Err("No source to copy from");
+                }
+            },
         };
 
         Ok(Query { source })

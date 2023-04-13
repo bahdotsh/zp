@@ -13,4 +13,5 @@ exclude = ["HomebrewFormula"]
 
 [dependencies]
 arboard = "3.2.0"
+atty = "0.2.14"
 clap = { version = "4.2.1", features = ["derive"] }

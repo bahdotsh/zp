@@ -1,8 +1,7 @@
 use arboard::Clipboard;
 use std::fs::File;
-use std::io::Read;
 use std::process;
-use std::io::{self, Read, BufRead};
+use std::io::{self, Read};
 use atty::Stream;
 
 #[derive(Debug)]
@@ -17,14 +16,14 @@ impl Query {
         let source = match args.next() {
             Some(arg) => arg,
             None => { 
-                if atty::is(Stream::Stdout) {
+                if atty::is(Stream::Stdout) && atty::is(Stream::Stderr) && atty::isnt(Stream::Stdin) {
                     let mut buffer = io::stdin();
                     let mut contents = String::new();
                     while let Ok(n) = buffer.read_to_string(&mut contents) {
                         if n == 0 {break;}
                      }
                     cpy(&contents);
-                    return Err("stdin");
+                    process::exit(1);
                 }else{
                     return Err("No source to copy from");
                 }

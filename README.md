@@ -23,7 +23,7 @@ cat sample_file.txt | zp
 ```
 This copies the entire output of the file.
 
-You can use get a range of lines and the first n words also from the std output buffer :
+You can use `zp` to get a range of lines and also the first n words from the std output buffer :
 ```
 cat sample_file.txt | zp 2
 

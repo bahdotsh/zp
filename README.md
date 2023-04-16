@@ -1,21 +1,18 @@
 # zp
 
-zp is a cli command to copy the contents of the source file or of the std output buffer to the clipboard.
-To use the `zp`, simply open your terminal or command prompt (well install it first) and type `zp` followed by the name of the source file. For example:
+`zp` is a cli command to copy the contents of the source file or of the std output buffer to the clipboard. To use the `zp`, simply open your terminal or command prompt (well install it first) and type `zp` followed by the name of the source file. For example:
 
-To copy the entire contents of the file: 
 ```
 zp my_file.txt
-
 ```
 
-To get the first `n` (n is an integer) words of the  file : 
+To get the first `n` words of the  file : 
 ```
-zp my_file.txt n
+zp -s n my_file.txt 
 ```
-To get the lines between a range, i.e., to get lines from `n` till `m` (n and m are integers) of the file:
+To get the lines between a range, i.e., to get lines from `n` till `m` of the file:
 ```
-zp my_file.txt n m 
+zp -s n -e m my_file.txt 
 ```
 Also you can use zp to copy from the std output buffer : 
 ```
@@ -23,15 +20,18 @@ cat sample_file.txt | zp
 ```
 This copies the entire output of the file.
 
-You can use `zp` to get a range of lines and also the first n words from the std output buffer :
+You can use get a range of lines and the first n words also from the std output buffer :
 ```
-cat sample_file.txt | zp 2
+cat sample_file.txt | zp -s 2
 
-cat sample_file.txt | zp 2 5
+cat sample_file.txt | zp -s 2 -e 5
 ```
 
 This gets the first 2 words and lines from 2 to 5 of the sample_file.txt respectively
 
+This will copy the contents of "myFile.txt" to the clipboard.
+
+The "zp" command is particularly useful for quickly copying text or data from one file to another without having to manually select and copy the text. This can save time and effort, especially when working with large or complex files.
 
 ## Install
 

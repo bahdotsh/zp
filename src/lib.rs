@@ -16,7 +16,9 @@ const VERSION: &str = env!("CARGO_PKG_VERSION");
 )]
 pub struct Zp {
     source: Option<String>,
+    #[clap(short, long)]
     start: Option<usize>,
+    #[clap(short, long)]
     end: Option<usize>,
 }
 

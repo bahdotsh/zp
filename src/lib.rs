@@ -3,15 +3,50 @@ use atty::Stream;
 use std::fs::File;
 use std::io::{self, Read};
 use std::process;
+use clap::Parser;
 
-#[derive(Debug)]
+const VERSION: &str = env!("CARGO_PKG_VERSION");
+
+#[derive(Parser)]
+#[command(
+    author = "Gokul <@bahdotsh>",
+    version = VERSION,
+    about = "Tool to copy contents from a file",
+
+)]
+pub struct Zp{
+    source: Option<String>,
+    start: Option<usize>,
+    end: Option<usize>,
+}
+
 pub struct Query {
-    pub source: String,
-    pub start: usize,
-    pub end: usize,
+    source: String,
+    start: usize,
+    end: usize,
 }
 
 impl Query {
+    pub fn build(mut zp: Zp) -> Result<Query, &'static str> {
+        let source = match zp.source {
+                Some(arg) => arg,
+                None => return Err("No source to copy from")
+            }; 
+        let start = match zp.start {
+            Some(args) => args,
+            None => return Err("Error parsing argument"),
+        }; 
+        let end = match zp.end {
+            Some(args) => args,
+            None => return Err("No source to copy from"),
+        };
+
+        Ok(Query { source, start, end })
+
+    }
+}
+
+/*impl Query {
     pub fn build(mut args: impl Iterator<Item = String>) -> Result<Query, &'static str> {
         args.next();
         if atty::is(Stream::Stdout) && atty::is(Stream::Stderr) && atty::isnt(Stream::Stdin) {
@@ -73,7 +108,7 @@ impl Query {
 
         Ok(Query { source, start, end })
     }
-}
+}*/
 
 fn read_file_content(file_path: &str) -> Result<String, std::io::Error> {
     let mut file = match File::open(file_path) {

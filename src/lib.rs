@@ -1,9 +1,9 @@
 use arboard::Clipboard;
-use atty::Stream;
+use clap::Parser;
+use is_terminal::IsTerminal;
 use std::fs::File;
 use std::io::{self, Read};
 use std::process;
-use clap::Parser;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -14,7 +14,7 @@ const VERSION: &str = env!("CARGO_PKG_VERSION");
     about = "Tool to copy contents from a file",
 
 )]
-pub struct Zp{
+pub struct Zp {
     source: Option<String>,
     start: Option<usize>,
     end: Option<usize>,
@@ -27,88 +27,41 @@ pub struct Query {
 }
 
 impl Query {
-    pub fn build(mut zp: Zp) -> Result<Query, &'static str> {
-        let source = match zp.source {
-                Some(arg) => arg,
-                None => return Err("No source to copy from")
-            }; 
-        let start = match zp.start {
-            Some(args) => args,
-            None => return Err("Error parsing argument"),
-        }; 
-        let end = match zp.end {
-            Some(args) => args,
-            None => return Err("No source to copy from"),
-        };
+    pub fn build(zp: Zp) -> Result<Query, &'static str> {
+        let mut source = String::new();
 
-        Ok(Query { source, start, end })
-
-    }
-}
-
-/*impl Query {
-    pub fn build(mut args: impl Iterator<Item = String>) -> Result<Query, &'static str> {
-        args.next();
-        if atty::is(Stream::Stdout) && atty::is(Stream::Stderr) && atty::isnt(Stream::Stdin) {
+        if io::stdout().is_terminal() && io::stderr().is_terminal() && !io::stdin().is_terminal() {
             let mut buffer = io::stdin();
-            let mut contents = String::new();
-            let start = match args.next() {
-                Some(arg) => arg,
-                None => "0".to_string(),
-            }
-            .parse::<usize>()
-            .unwrap_or_else(|err| {
-                eprintln!("Parsing error! {} ", err);
-                process::exit(1);
-            });
 
-            let end = match args.next() {
-                Some(arg) => arg,
-                None => "0".to_string(),
-            }
-            .parse::<usize>()
-            .unwrap_or_else(|err| {
-                eprintln!("Parsing error! {}", err);
-                process::exit(1);
-            });
-
-            while let Ok(n) = buffer.read_to_string(&mut contents) {
+            while let Ok(n) = buffer.read_to_string(&mut source) {
                 if n == 0 {
                     break;
                 }
             }
-            cpy(&contents, start as usize, end as usize);
-            process::exit(1);
+        } else {
+            source = match zp.source {
+                Some(arg) => arg,
+                None => return Err("No source to copy from"),
+            };
         }
-
-        let source = match args.next() {
+        let start = match zp.start {
             Some(args) => args,
-            None => return Err("No source to copy from"),
+            None => "0".to_string().parse::<usize>().unwrap_or_else(|err| {
+                eprintln!("Parsing error! {} ", err);
+                process::exit(1);
+            }),
         };
-
-        let start = match args.next() {
-            Some(arg) => arg,
-            None => "0".to_string(),
-        }
-        .parse::<usize>()
-        .unwrap_or_else(|err| {
-            eprintln!("Parsing error! {} ", err);
-            process::exit(1);
-        });
-
-        let end = match args.next() {
-            Some(arg) => arg,
-            None => "0".to_string(),
-        }
-        .parse::<usize>()
-        .unwrap_or_else(|err| {
-            eprintln!("Parsing error! {}", err);
-            process::exit(1);
-        });
+        let end = match zp.end {
+            Some(args) => args,
+            None => "0".to_string().parse::<usize>().unwrap_or_else(|err| {
+                eprintln!("Parsing error! {} ", err);
+                process::exit(1);
+            }),
+        };
 
         Ok(Query { source, start, end })
     }
-}*/
+}
 
 fn read_file_content(file_path: &str) -> Result<String, std::io::Error> {
     let mut file = match File::open(file_path) {
@@ -125,12 +78,15 @@ fn read_file_content(file_path: &str) -> Result<String, std::io::Error> {
 }
 
 pub fn run(query: Query) -> Result<(), std::io::Error> {
-    let contents = match read_file_content(&query.source) {
-        Ok(data) => data,
-        Err(error) => return Err(error),
-    };
-    cpy(&contents, query.start, query.end);
-
+    if io::stdout().is_terminal() && io::stderr().is_terminal() && !io::stdin().is_terminal() {
+        cpy(&query.source, query.start, query.end);
+    } else {
+        let contents = match read_file_content(&query.source) {
+            Ok(data) => data,
+            Err(error) => return Err(error),
+        };
+        cpy(&contents, query.start, query.end);
+    }
     Ok(())
 }
 

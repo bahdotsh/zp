@@ -15,3 +15,4 @@ exclude = ["HomebrewFormula"]
 arboard = "3.2.0"
 clap = { version = "4.2.1", features = ["derive"] }
 is-terminal = "0.4.7"
+magic-wormhole = "0.6.0"

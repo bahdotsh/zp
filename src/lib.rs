@@ -5,6 +5,8 @@ use std::fs::File;
 use std::io::{self, Read};
 use std::process;
 
+mod wormhole;
+
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[derive(Parser)]

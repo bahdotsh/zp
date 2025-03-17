@@ -6,7 +6,7 @@ use zp::{Query, Zp};
 fn main() {
     // Parse command-line arguments into a Zp struct
     let zp = Zp::parse();
-    if zp.log {
+    if zp.logs {
         print_clipboard_history().unwrap();
     } else {
         match Query::build(&zp) {

@@ -15,7 +15,7 @@ pub struct Zp {
     #[clap(short, long)]
     pub end: Option<usize>,
     #[clap(short, long)]
-    pub log: bool,
+    pub logs: bool,
 }
 
 pub struct Query {

@@ -1,8 +1,8 @@
 [package]
 name = "zp"
-version = "1.0.0"
+version = "1.1.0"
 edition = "2021"
-description = "Copy the contents of the source file or the std output buffer to the clipboard, allowing users to easily paste the contents into another file or program."
+description = "Copy the contents of the source file or the standard output buffer to the clipboard, with support for maintaining a history of copied content, allowing users to easily paste into another file or program."
 documentation = "https://github.com/bahdotsh/zp"
 homepage = "https://github.com/bahdotsh/zp"
 repository = "https://github.com/bahdotsh/zp"
@@ -13,5 +13,10 @@ exclude = ["HomebrewFormula"]
 
 [dependencies]
 arboard = "3.2.0"
+chrono = "0.4.40"
 clap = { version = "4.2.1", features = ["derive"] }
+crossterm = "0.28.1"
 is-terminal = "0.4.7"
+ratatui = "0.29.0"
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = "1.0.140"

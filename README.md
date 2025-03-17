@@ -6,17 +6,17 @@
 zp my_file.txt
 ```
 
-To get the first `n` words of the  file : 
+To get the first `n` words of the  file :
 ```
-zp -s n my_file.txt 
+zp -s n my_file.txt
 ```
 To get the lines between a range, i.e., to get lines from `n` till `m` of the file:
 ```
-zp -s n -e m my_file.txt 
+zp -s n -e m my_file.txt
 ```
-Also you can use zp to copy from the std output buffer : 
+Also you can use zp to copy from the std output buffer :
 ```
-cat sample_file.txt | zp 
+cat sample_file.txt | zp
 ```
 This copies the entire output of the file.
 
@@ -30,6 +30,13 @@ cat sample_file.txt | zp -s 2 -e 5
 This gets the first 2 words and lines from 2 to 5 of the sample_file.txt respectively
 
 This will copy the contents of "myFile.txt" to the clipboard.
+
+### Logs and History
+Every copied content is saved to a history file, allowing you to revisit previously copied entries. To view the copy history, use:
+
+```
+zp --logs
+```
 
 The "zp" command is particularly useful for quickly copying text or data from one file to another without having to manually select and copy the text. This can save time and effort, especially when working with large or complex files.
 

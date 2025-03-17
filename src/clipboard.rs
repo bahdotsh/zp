@@ -1,7 +1,8 @@
+use crate::history::save_clipboard_history;
 use arboard::Clipboard;
 use std::process;
 
-pub fn cpy<'a>(contents: &'a str, start: usize, end: usize) {
+pub fn cpy(contents: &str, start: usize, end: usize) {
     let mut clipboard = Clipboard::new().unwrap();
 
     if end == 0 {
@@ -29,4 +30,6 @@ pub fn cpy<'a>(contents: &'a str, start: usize, end: usize) {
             process::exit(1);
         });
     }
+
+    save_clipboard_history(contents.to_string());
 }

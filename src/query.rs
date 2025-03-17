@@ -14,6 +14,8 @@ pub struct Zp {
     pub start: Option<usize>,
     #[clap(short, long)]
     pub end: Option<usize>,
+    #[clap(short, long)]
+    pub logs: bool,
 }
 
 pub struct Query {
@@ -23,7 +25,7 @@ pub struct Query {
 }
 
 impl Query {
-    pub fn build(zp: Zp) -> Result<Query, &'static str> {
+    pub fn build(zp: &Zp) -> Result<Query, &'static str> {
         let mut source = String::new();
 
         if io::stdout().is_terminal() && io::stderr().is_terminal() && !io::stdin().is_terminal() {
@@ -34,8 +36,8 @@ impl Query {
                 }
             }
         } else {
-            source = match zp.source {
-                Some(arg) => arg,
+            source = match &zp.source {
+                Some(arg) => arg.to_owned(),
                 None => return Err("No source to copy from"),
             };
         }

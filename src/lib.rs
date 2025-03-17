@@ -1,5 +1,6 @@
 mod clipboard;
 mod file;
+pub mod history;
 mod query;
 mod run;
 

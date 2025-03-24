@@ -24,7 +24,6 @@ pub fn start_daemon() -> Result<(), Box<dyn std::error::Error>> {
         if let Ok(pid) = pid_str.trim().parse::<u32>() {
             #[cfg(unix)]
             {
-                use std::os::unix::process::CommandExt;
                 let status = std::process::Command::new("kill")
                     .arg("-0")
                     .arg(pid.to_string())
@@ -66,11 +65,11 @@ pub fn start_daemon() -> Result<(), Box<dyn std::error::Error>> {
         match daemonize.start() {
             Ok(_) => {
                 // We're now in the daemon process
-                return run_daemon_worker();
+                run_daemon_worker()
             }
             Err(e) => {
                 eprintln!("Error starting daemon: {}", e);
-                return Err(e.into());
+                Err(e.into())
             }
         }
     }
@@ -136,7 +135,6 @@ pub fn stop_daemon() -> Result<(), Box<dyn std::error::Error>> {
         // Send termination signal
         #[cfg(unix)]
         {
-            use std::os::unix::process::CommandExt;
             let status = std::process::Command::new("kill")
                 .arg(pid.to_string())
                 .status();
@@ -190,7 +188,6 @@ pub fn daemon_status() -> Result<(), Box<dyn std::error::Error>> {
         // Check if process is running
         #[cfg(unix)]
         {
-            use std::os::unix::process::CommandExt;
             let status = std::process::Command::new("kill")
                 .arg("-0")
                 .arg(pid.to_string())

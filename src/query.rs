@@ -16,6 +16,25 @@ pub struct Zp {
     pub end: Option<usize>,
     #[clap(short, long)]
     pub logs: bool,
+
+    #[clap(long, short, help = "Start the clipboard monitoring daemon")]
+    pub daemon: bool,
+    #[clap(
+        long = "stop-daemon",
+        short = 'k',
+        alias = "sd",
+        help = "Stop the clipboard monitoring daemon"
+    )]
+    pub stop_daemon: bool,
+
+    // Use short alias 't' and provide a long alias for clarity
+    #[clap(
+        long = "daemon-status",
+        short = 't',
+        alias = "ds",
+        help = "Check if the daemon is running"
+    )]
+    pub daemon_status: bool,
 }
 
 pub struct Query {

@@ -1,60 +1,83 @@
 # zp
 
-`zp` is a cli command to copy the contents of the source file or of the std output buffer to the clipboard. To use the `zp`, simply open your terminal or command prompt (well install it first) and type `zp` followed by the name of the source file. For example:
+`zp` is a command-line tool designed to copy text or data from files or standard output buffers directly to the clipboard. This can be particularly useful for developers and power users who need quick access to snippets of code, configurations, or any other textual information.
 
-```
+## Usage
+
+### Copying from a File
+To copy the entire contents of a file:
+```bash
 zp my_file.txt
 ```
 
-To get the first `n` words of the  file :
-```
+To get the first `n` words from a file:
+```bash
 zp -s n my_file.txt
 ```
-To get the lines between a range, i.e., to get lines from `n` till `m` of the file:
-```
+
+To get lines between a range, i.e., lines `n` to `m`:
+```bash
 zp -s n -e m my_file.txt
 ```
-Also you can use zp to copy from the std output buffer :
-```
+
+### Copying from Standard Output
+To copy the entire output of a command:
+```bash
 cat sample_file.txt | zp
 ```
-This copies the entire output of the file.
 
-You can use get a range of lines and the first n words also from the std output buffer :
-```
-cat sample_file.txt | zp -s 2
+For ranges and specific words, you can use similar flags as with files.
 
-cat sample_file.txt | zp -s 2 -e 5
-```
+## Logs and History
 
-This gets the first 2 words and lines from 2 to 5 of the sample_file.txt respectively
-
-This will copy the contents of "myFile.txt" to the clipboard.
-
-### Logs and History
-Every copied content is saved to a history file, allowing you to revisit previously copied entries. To view the copy history, use:
-
-```
+Every copied content is saved to a history file located in your home directory (`~/.zp/clipboard_history.json`). You can view the copy history using:
+```bash
 zp --logs
 ```
+This provides an interactive interface showing the last copied items, along with timestamps. The log viewer supports navigation, copying, and exiting.
 
-The "zp" command is particularly useful for quickly copying text or data from one file to another without having to manually select and copy the text. This can save time and effort, especially when working with large or complex files.
+## Daemon Mode
 
-## Install
+The `zp` tool also includes a clipboard monitoring daemon to automatically save any changes made to the clipboard. This can be especially useful if you want to keep a history of every change made to your clipboard without manually triggering the copy command each time.
 
-It's best to use rustup to get setup with a Rust toolchain, then you can run:
-
-`cargo install zp`
-
-### Homebrew
+### Starting the Daemon
+To start the clipboard monitoring daemon:
+```bash
+zp --daemon
 ```
-brew tap bahdotsh/zp
-brew install zp
+This will fork the tool into the background and continue running, automatically saving any clipboard changes.
+
+### Stopping the Daemon
+To stop the clipboard monitoring daemon:
+```bash
+zp --stop-daemon
 ```
 
-### From source
+### Checking the Daemon Status
+You can check if the daemon is currently running with:
+```bash
+zp --daemon-status
 ```
+This will inform you whether the daemon is active and provide its process ID.
+
+## Installation
+
+The recommended way to install `zp` is using Rust's package manager, Cargo. Here are several methods:
+
+### Using Cargo Install (Recommended)
+```bash
+cargo install zp
+```
+
+### From Source
+For those who prefer building from source, you can clone the repository and build it manually:
+```bash
 git clone https://github.com/bahdotsh/zp.git
 cd zp
 cargo install --path .
 ```
+This method allows you to customize or modify the code before installation.
+
+## License
+
+`zp` is licensed under the MIT license. See the `LICENSE` file for more details.

@@ -1,6 +1,6 @@
 [package]
 name = "zp"
-version = "1.2.0"
+version = "1.2.1"
 edition = "2021"
 description = "Copy the contents of the source file or the standard output buffer to the clipboard, with support for maintaining a history of copied content, allowing users to easily paste into another file or program."
 documentation = "https://github.com/bahdotsh/zp"

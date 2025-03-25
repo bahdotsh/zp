@@ -16,7 +16,7 @@ use ratatui::text::{Line, Span};
 use ratatui::{
     backend::CrosstermBackend,
     style::{Color, Modifier, Style},
-    widgets::{Block, Borders, List, ListItem, ListState},
+    widgets::{Block, Borders, List, ListItem},
     Terminal,
 };
 
@@ -106,14 +106,9 @@ pub fn print_clipboard_history() -> Result<(), io::Error> {
 
     enable_raw_mode()?;
     execute!(stdout(), EnterAlternateScreen)?;
+
     let mut terminal = Terminal::new(CrosstermBackend::new(stdout()))?;
-
-    let mut state = ListState::default();
-    if !entries.is_empty() {
-        state.select(Some(0));
-    }
-
-    let result = run_app(&mut terminal, &entries, &mut state);
+    let result = run_app(&mut terminal, &entries);
 
     disable_raw_mode()?;
     execute!(stdout(), LeaveAlternateScreen)?;
@@ -143,7 +138,6 @@ fn format_elapsed_time(timestamp: &str) -> String {
 fn run_app(
     terminal: &mut Terminal<CrosstermBackend<std::io::Stdout>>,
     entries: &[ClipboardHistoryEntry],
-    _state: &mut ListState,
 ) -> io::Result<()> {
     let mut clipboard = Clipboard::new().unwrap();
     let mut selected = entries.len().saturating_sub(1); // Start at the bottom

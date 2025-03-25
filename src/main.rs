@@ -8,6 +8,33 @@ fn main() {
     // Parse command-line arguments into a Zp struct
     let zp = Zp::parse();
 
+    if zp.list_peers {
+        if let Err(e) = zp::p2p::list_peers() {
+            eprintln!("Error listing peers: {}", e);
+            process::exit(1);
+        }
+        return;
+    }
+    // Set P2P environment variables based on CLI options
+    if zp.p2p_sync {
+        std::env::set_var("ZP_P2P_SYNC", "true");
+    }
+
+    if let Some(peer) = &zp.p2p_connect {
+        if zp.p2p_sync {
+            // Try to connect to the specified peer
+            if let Err(e) = zp::p2p::connect_to_peer(peer) {
+                eprintln!("Failed to connect to peer: {}", e);
+                process::exit(1);
+            }
+            println!("Successfully connected to peer {}", peer);
+            process::exit(0);
+        } else {
+            eprintln!("Error: --p2p-sync must be enabled to use --p2p-connect");
+            process::exit(1);
+        }
+    }
+
     // Special hidden flag for daemon worker process
     if env::args().any(|arg| arg == "--daemon-worker") {
         if let Err(e) = zp::run_daemon_worker() {

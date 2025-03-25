@@ -2,6 +2,7 @@ mod clipboard;
 pub mod daemon;
 mod file;
 pub mod history;
+pub mod p2p;
 mod query;
 mod run;
 

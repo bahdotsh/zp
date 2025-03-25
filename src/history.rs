@@ -1,17 +1,12 @@
+use crate::p2p::P2PNode;
 use arboard::Clipboard;
 use chrono::{DateTime, Local, TimeZone};
-use ratatui::layout::Rect;
-use serde::{Deserialize, Serialize};
-use std::env;
-use std::fs::{self};
-use std::io::{self, stdout};
-use std::path::PathBuf;
-
 use crossterm::{
     event::{self, KeyCode, KeyEvent},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
+use ratatui::layout::Rect;
 use ratatui::text::{Line, Span};
 use ratatui::{
     backend::CrosstermBackend,
@@ -19,16 +14,73 @@ use ratatui::{
     widgets::{Block, Borders, List, ListItem},
     Terminal,
 };
+use serde::{Deserialize, Serialize};
+use std::env;
+use std::fs::{self};
+use std::io::{self, stdout};
+use std::path::PathBuf;
+use std::thread;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ClipboardHistoryEntry {
     pub content: String,
     pub timestamp: String,
 }
 
+pub fn merge_clipboard_entry(entry: ClipboardHistoryEntry) {
+    // Load existing history
+    let history_dir = env::var("HOME")
+        .map(|home| PathBuf::from(home).join(".zp"))
+        .unwrap_or_else(|_| PathBuf::from(".zp"));
+
+    let history_file = history_dir.join("clipboard_history.json");
+
+    // Create directory if needed
+    if !history_dir.exists() {
+        fs::create_dir_all(&history_dir).expect("Failed to create .zp directory");
+    }
+
+    // Load existing history
+    let mut history = if let Ok(content) = fs::read_to_string(&history_file) {
+        serde_json::from_str::<Vec<ClipboardHistoryEntry>>(&content).unwrap_or_else(|_| vec![])
+    } else {
+        vec![]
+    };
+
+    // Check if the entry already exists by comparing content and timestamp
+    let already_exists = history
+        .iter()
+        .any(|existing| existing.content == entry.content && existing.timestamp == entry.timestamp);
+
+    if !already_exists {
+        // Add the new entry
+        history.push(entry);
+
+        // Sort the history by timestamp
+        history.sort_by(|a, b| a.timestamp.cmp(&b.timestamp));
+
+        // Limit history size if needed
+        if history.len() > 100 {
+            // Keep only most recent 100 entries
+            history.drain(0..history.len() - 100);
+        }
+
+        // Save updated history
+        let serialized_history =
+            serde_json::to_string_pretty(&history).expect("Failed to serialize clipboard history");
+        fs::write(&history_file, serialized_history).expect("Failed to write clipboard history");
+    }
+}
+
+pub fn merge_clipboard_history(entries: Vec<ClipboardHistoryEntry>) {
+    // Process each entry individually to avoid duplicates
+    for entry in entries {
+        merge_clipboard_entry(entry);
+    }
+}
+
 pub fn save_clipboard_history(content: String) {
     // Try to get home directory, fallback to current directory
-    // Get the home directory from the HOME env var (works on Linux/macOS)
     let history_dir = env::var("HOME")
         .map(|home| PathBuf::from(home).join(".zp"))
         .unwrap_or_else(|_| {
@@ -53,12 +105,27 @@ pub fn save_clipboard_history(content: String) {
     };
 
     // Add new entry
-    history.push(entry);
+    history.push(entry.clone());
 
     // Serialize and write updated history
     let serialized_history =
         serde_json::to_string_pretty(&history).expect("Failed to serialize clipboard history");
     fs::write(&history_file, serialized_history).expect("Failed to write clipboard history");
+
+    // Check if P2P sync is enabled and notify peers
+    let p2p_enabled = env::var("ZP_P2P_SYNC")
+        .map(|val| val == "1" || val.to_lowercase() == "true")
+        .unwrap_or(false);
+
+    if p2p_enabled {
+        // Use a non-blocking approach to send the entry to peers
+        let entry_clone = entry.clone();
+        thread::spawn(move || {
+            if let Ok(p2p_node) = P2PNode::new() {
+                let _ = futures::executor::block_on(p2p_node.send_new_entry(entry_clone));
+            }
+        });
+    }
 }
 
 pub fn load_clipboard_history() -> Result<Vec<ClipboardHistoryEntry>, io::Error> {
@@ -145,7 +212,7 @@ fn run_app(
 
     loop {
         terminal.draw(|f| {
-            let size = f.area();
+            let size = f.size();
             let app_height = size.height / 2;
             let max_visible_items = app_height.saturating_sub(2) as usize; // Account for borders
 

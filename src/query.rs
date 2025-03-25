@@ -27,7 +27,6 @@ pub struct Zp {
     )]
     pub stop_daemon: bool,
 
-    // Use short alias 't' and provide a long alias for clarity
     #[clap(
         long = "daemon-status",
         short = 't',
@@ -35,6 +34,21 @@ pub struct Zp {
         help = "Check if the daemon is running"
     )]
     pub daemon_status: bool,
+
+    // P2P options
+    #[clap(
+        long = "p2p-sync",
+        help = "Enable P2P clipboard history synchronization"
+    )]
+    pub p2p_sync: bool,
+
+    #[clap(
+        long = "p2p-connect",
+        help = "Connect to a specific P2P node (format: /ip4/1.2.3.4/tcp/1234/p2p/PeerID)"
+    )]
+    pub p2p_connect: Option<String>,
+    #[clap(long = "list-peers", help = "List all known P2P peers")]
+    pub list_peers: bool,
 }
 
 pub struct Query {

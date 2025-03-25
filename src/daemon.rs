@@ -98,6 +98,33 @@ pub fn run_daemon_worker() -> Result<(), Box<dyn std::error::Error>> {
 
     // Initialize clipboard
     let mut clipboard = Clipboard::new()?;
+    let p2p_enabled = env::var("ZP_P2P_SYNC")
+        .map(|val| val == "1" || val.to_lowercase() == "true")
+        .unwrap_or(false);
+
+    if p2p_enabled {
+        println!("Starting P2P clipboard sync service");
+        match crate::p2p::P2PNode::new() {
+            Ok(p2p_node) => {
+                // Request history from peers in a separate thread to avoid blocking
+                let node = p2p_node.clone();
+                std::thread::spawn(move || {
+                    futures::executor::block_on(async {
+                        let _ = node.request_history().await;
+                    });
+                });
+            }
+            Err(e) => eprintln!("Failed to start P2P service: {}", e),
+        }
+
+        // Connect to bootstrap peer if specified
+        if let Ok(peer) = env::var("ZP_BOOTSTRAP_PEER") {
+            if let Err(e) = crate::p2p::connect_to_peer(&peer) {
+                eprintln!("Failed to connect to bootstrap peer: {}", e);
+            }
+        }
+    }
+
     let mut last_content = String::new();
 
     // Monitor clipboard in the background

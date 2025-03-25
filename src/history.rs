@@ -16,7 +16,7 @@ use ratatui::text::{Line, Span};
 use ratatui::{
     backend::CrosstermBackend,
     style::{Color, Modifier, Style},
-    widgets::{Block, Borders, List, ListItem, ListState},
+    widgets::{Block, Borders, List, ListItem},
     Terminal,
 };
 
@@ -106,14 +106,9 @@ pub fn print_clipboard_history() -> Result<(), io::Error> {
 
     enable_raw_mode()?;
     execute!(stdout(), EnterAlternateScreen)?;
+
     let mut terminal = Terminal::new(CrosstermBackend::new(stdout()))?;
-
-    let mut state = ListState::default();
-    if !entries.is_empty() {
-        state.select(Some(0));
-    }
-
-    let result = run_app(&mut terminal, &entries, &mut state);
+    let result = run_app(&mut terminal, &entries);
 
     disable_raw_mode()?;
     execute!(stdout(), LeaveAlternateScreen)?;
@@ -143,69 +138,63 @@ fn format_elapsed_time(timestamp: &str) -> String {
 fn run_app(
     terminal: &mut Terminal<CrosstermBackend<std::io::Stdout>>,
     entries: &[ClipboardHistoryEntry],
-    state: &mut ListState,
 ) -> io::Result<()> {
     let mut clipboard = Clipboard::new().unwrap();
-    state.select(Some(entries.len().saturating_sub(1))); // Start from the bottom
+    let mut selected = entries.len().saturating_sub(1); // Start at the bottom
+    let mut offset = 0; // Offset to manage scrolling
 
     loop {
         terminal.draw(|f| {
             let size = f.area();
             let app_height = size.height / 2;
-            let app_area = Rect {
-                y: size.height - app_height, // Push to the bottom
-                width: size.width,
-                height: app_height,
-                ..size
-            };
+            let max_visible_items = app_height.saturating_sub(2) as usize; // Account for borders
 
-            // Calculate max visible items in the half-screen area
-            let max_visible_items = app_height as usize - 2; // Subtract for borders
+            // Ensure offset keeps the selected item in view
+            if selected >= offset + max_visible_items {
+                offset = selected.saturating_sub(max_visible_items).saturating_add(1);
+            } else if selected < offset {
+                offset = selected;
+            }
 
-            // Ensure the entries stick to the bottom
-            let visible_entries = if entries.len() <= max_visible_items {
-                entries
-            } else {
-                &entries[entries.len() - max_visible_items..]
-            };
+            // Calculate the visible entries
+            let visible_entries = &entries[offset..entries.len().min(offset + max_visible_items)];
 
-            // Calculate empty rows at the top to push content to the bottom
-            let empty_rows = max_visible_items.saturating_sub(visible_entries.len());
-            let mut items: Vec<ListItem> = (0..empty_rows).map(|_| ListItem::new("")).collect();
+            // Render list items
+            let items: Vec<ListItem> = visible_entries
+                .iter()
+                .enumerate()
+                .map(|(i, entry)| {
+                    let actual_index = offset + i;
+                    let elapsed = format_elapsed_time(&entry.timestamp);
+                    let elapsed_styled = Span::styled(elapsed, Style::default().fg(Color::Green));
+                    let content_styled =
+                        Span::styled(entry.content.clone(), Style::default().fg(Color::White));
 
-            items.extend(visible_entries.iter().enumerate().map(|(i, entry)| {
-                let elapsed = format_elapsed_time(&entry.timestamp);
-                let elapsed_styled = Span::styled(elapsed, Style::default().fg(Color::Green));
-                let content_styled =
-                    Span::styled(entry.content.clone(), Style::default().fg(Color::White));
+                    let highlight_symbol = if actual_index == selected {
+                        Span::styled(
+                            "> ",
+                            Style::default()
+                                .fg(Color::Green)
+                                .add_modifier(Modifier::BOLD),
+                        )
+                    } else {
+                        Span::raw("  ")
+                    };
 
-                let actual_index = entries.len() - visible_entries.len() + i;
+                    let line = Line::from(vec![
+                        highlight_symbol,
+                        elapsed_styled,
+                        Span::raw(" "),
+                        content_styled,
+                    ]);
 
-                // Add the highlight symbol only when selected
-                let highlight_symbol = if state.selected() == Some(actual_index) {
-                    Span::styled(
-                        "> ",
-                        Style::default()
-                            .fg(Color::Green)
-                            .add_modifier(Modifier::BOLD),
-                    )
-                } else {
-                    Span::raw("  ") // Maintain alignment when not selected
-                };
-
-                let line = Line::from(vec![
-                    highlight_symbol,
-                    elapsed_styled,
-                    Span::raw(" "),
-                    content_styled,
-                ]);
-
-                if state.selected() == Some(actual_index) {
-                    ListItem::new(line).style(Style::default().bg(Color::DarkGray))
-                } else {
-                    ListItem::new(line)
-                }
-            }));
+                    if actual_index == selected {
+                        ListItem::new(line).style(Style::default().bg(Color::DarkGray))
+                    } else {
+                        ListItem::new(line)
+                    }
+                })
+                .collect();
 
             let list = List::new(items).block(
                 Block::default()
@@ -214,34 +203,35 @@ fn run_app(
                     .style(Style::default().bg(Color::Black).fg(Color::White)),
             );
 
-            f.render_stateful_widget(list, app_area, state);
+            f.render_widget(
+                list,
+                Rect {
+                    y: size.height - app_height,
+                    width: size.width,
+                    height: app_height,
+                    ..size
+                },
+            );
         })?;
 
+        // Handle input
         if let event::Event::Key(KeyEvent { code, .. }) = event::read()? {
             match code {
                 KeyCode::Up => {
-                    // Navigate up to older entries
-                    if let Some(selected) = state.selected() {
-                        if selected > 0 {
-                            state.select(Some(selected - 1));
-                        }
+                    if selected > 0 {
+                        selected = selected.saturating_sub(1);
                     }
                 }
                 KeyCode::Down => {
-                    // Navigate down to newer entries
-                    if let Some(selected) = state.selected() {
-                        if selected < entries.len() - 1 {
-                            state.select(Some(selected + 1));
-                        }
+                    if selected < entries.len().saturating_sub(1) {
+                        selected += 1;
                     }
                 }
                 KeyCode::Enter => {
-                    if let Some(selected) = state.selected() {
-                        let content = &entries[selected].content;
-                        clipboard.set_text(content.to_owned()).unwrap();
-                        println!("Copied: {}", content);
-                        break;
-                    }
+                    let content = &entries[selected].content;
+                    clipboard.set_text(content.to_owned()).unwrap();
+                    println!("Copied: {}", content);
+                    break;
                 }
                 KeyCode::Esc => break,
                 _ => {}

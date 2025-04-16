@@ -96,6 +96,26 @@ pub fn run_daemon_worker() -> Result<(), Box<dyn std::error::Error>> {
     let mut file = File::create(&pid_file)?;
     write!(file, "{}", pid)?;
 
+    // Start sync engine if enabled
+    let sync_config = crate::sync::load_sync_config().unwrap_or_default();
+    let sync_enabled = sync_config.enabled;
+    
+    if sync_enabled {
+        // We need a proper runtime for the async sync engine
+        let runtime = tokio::runtime::Builder::new_multi_thread()
+            .enable_all()
+            .build()
+            .expect("Failed to create Tokio runtime");
+            
+        // Start the sync engine in the background
+        runtime.spawn(async {
+            match crate::sync::start_sync_engine().await {
+                Ok(_) => println!("Sync engine started successfully"),
+                Err(e) => eprintln!("Failed to start sync engine: {}", e),
+            }
+        });
+    }
+
     // Initialize clipboard
     let mut clipboard = Clipboard::new()?;
     let mut last_content = String::new();

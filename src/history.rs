@@ -6,6 +6,7 @@ use std::env;
 use std::fs::{self};
 use std::io::{self, stdout};
 use std::path::PathBuf;
+use crate::sync::{SyncStatus, generate_entry_id, get_device_id};
 
 use crossterm::{
     event::{self, KeyCode, KeyEvent},
@@ -20,10 +21,16 @@ use ratatui::{
     Terminal,
 };
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ClipboardHistoryEntry {
     pub content: String,
     pub timestamp: String,
+    #[serde(default = "get_device_id")]
+    pub device_id: String,
+    #[serde(default)]
+    pub sync_status: SyncStatus,
+    #[serde(default = "generate_entry_id")]
+    pub entry_id: String,
 }
 
 pub fn save_clipboard_history(content: String) {
@@ -43,7 +50,13 @@ pub fn save_clipboard_history(content: String) {
     let history_file = history_dir.join("clipboard_history.json");
     let timestamp = Local::now().to_rfc3339();
 
-    let entry = ClipboardHistoryEntry { content, timestamp };
+    let entry = ClipboardHistoryEntry {
+        content,
+        timestamp,
+        device_id: get_device_id(),
+        sync_status: SyncStatus::LocalOnly,
+        entry_id: generate_entry_id(),
+    };
 
     // Load existing history
     let mut history = if let Ok(content) = fs::read_to_string(&history_file) {
@@ -53,12 +66,59 @@ pub fn save_clipboard_history(content: String) {
     };
 
     // Add new entry
-    history.push(entry);
+    history.push(entry.clone());
 
     // Serialize and write updated history
     let serialized_history =
         serde_json::to_string_pretty(&history).expect("Failed to serialize clipboard history");
     fs::write(&history_file, serialized_history).expect("Failed to write clipboard history");
+
+    // Handle sync if enabled
+    sync_clipboard_entry(entry);
+}
+
+/// Sync the clipboard entry to the sync directory if syncing is enabled
+fn sync_clipboard_entry(entry: ClipboardHistoryEntry) {
+    // Check if sync is enabled
+    match crate::sync::load_sync_config() {
+        Ok(config) if config.enabled => {
+            // Ensure sync directory exists
+            if !config.sync_dir.exists() {
+                if let Err(e) = fs::create_dir_all(&config.sync_dir) {
+                    eprintln!("Failed to create sync directory: {}", e);
+                    return;
+                }
+            }
+
+            // Write entry to sync file
+            let sync_file = config.sync_dir.join("clipboard_history_sync.json");
+            
+            // Load existing synced entries
+            let mut synced_entries = if sync_file.exists() {
+                match fs::read_to_string(&sync_file) {
+                    Ok(content) => serde_json::from_str::<Vec<ClipboardHistoryEntry>>(&content)
+                        .unwrap_or_else(|_| vec![]),
+                    Err(_) => vec![],
+                }
+            } else {
+                vec![]
+            };
+
+            // Add new entry with Synced status
+            let mut synced_entry = entry;
+            synced_entry.sync_status = crate::sync::SyncStatus::Synced;
+            synced_entries.push(synced_entry);
+
+            // Write updated entries
+            if let Err(e) = fs::write(
+                &sync_file,
+                serde_json::to_string_pretty(&synced_entries).unwrap(),
+            ) {
+                eprintln!("Failed to write to sync file: {}", e);
+            }
+        },
+        _ => {}, // Sync is disabled or failed to load config
+    }
 }
 
 pub fn load_clipboard_history() -> Result<Vec<ClipboardHistoryEntry>, io::Error> {

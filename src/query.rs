@@ -2,39 +2,62 @@ use clap::Parser;
 use is_terminal::IsTerminal;
 use std::io::{self, Read};
 
-#[derive(Parser)]
+#[derive(Parser, Debug)]
 #[command(
     author = "Gokul <@bahdotsh>",
     version = env!("CARGO_PKG_VERSION"),
     about = "Tool to copy contents from a file",
+    long_about = None
 )]
+#[command(propagate_version = true)]
 pub struct Zp {
-    pub source: Option<String>,
-    #[clap(short, long)]
-    pub start: Option<usize>,
-    #[clap(short, long)]
-    pub end: Option<usize>,
-    #[clap(short, long)]
+    /// Source file to read from or pattern to search for
+    #[arg(default_value = "")]
+    pub pattern: String,
+
+    /// Display file names
+    #[arg(short = 'f', long, default_value_t = false)]
+    pub filenames: bool,
+
+    /// Start search at lineno
+    #[arg(short = 'n', long, default_value_t = 0)]
+    pub lineno: usize,
+
+    // Logs option
+    #[arg(short, long, default_value_t = false)]
     pub logs: bool,
 
-    #[clap(long, short, help = "Start the clipboard monitoring daemon")]
+    /// Start daemon
+    #[arg(long, default_value_t = false)]
     pub daemon: bool,
-    #[clap(
-        long = "stop-daemon",
-        short = 'k',
-        alias = "sd",
-        help = "Stop the clipboard monitoring daemon"
-    )]
+
+    /// Stop daemon
+    #[arg(long, default_value_t = false)]
     pub stop_daemon: bool,
 
-    // Use short alias 't' and provide a long alias for clarity
-    #[clap(
-        long = "daemon-status",
-        short = 't',
-        alias = "ds",
-        help = "Check if the daemon is running"
-    )]
+    /// Check daemon status
+    #[arg(long, default_value_t = false)]
     pub daemon_status: bool,
+    
+    /// Enable clipboard history syncing
+    #[arg(long, default_value_t = false)]
+    pub sync_enable: bool,
+    
+    /// Disable clipboard history syncing
+    #[arg(long, default_value_t = false)]
+    pub sync_disable: bool,
+    
+    /// Show sync status
+    #[arg(long, default_value_t = false)]
+    pub sync_status: bool,
+    
+    /// Set sync directory
+    #[arg(long)]
+    pub sync_dir: Option<String>,
+    
+    /// Set device name for syncing
+    #[arg(long)]
+    pub sync_device_name: Option<String>,
 }
 
 pub struct Query {
@@ -55,14 +78,15 @@ impl Query {
                 }
             }
         } else {
-            source = match &zp.source {
-                Some(arg) => arg.to_owned(),
-                None => return Err("No source to copy from"),
+            source = if zp.pattern.is_empty() {
+                return Err("No source to copy from")
+            } else {
+                zp.pattern.clone()
             };
         }
 
-        let start = zp.start.unwrap_or(0);
-        let end = zp.end.unwrap_or(0);
+        let start = zp.lineno;
+        let end = zp.lineno;
 
         Ok(Query { source, start, end })
     }

@@ -104,8 +104,14 @@ zp --sync-disable
 # Show configuration
 zp --sync-config
 
-# Start sync daemon (runs indefinitely)
+# Start sync daemon (runs in background)
 zp --sync-daemon
+
+# Stop sync daemon
+zp --stop-sync-daemon
+
+# Check sync daemon status
+zp --sync-daemon-status
 
 # One-time sync
 zp --sync-now
@@ -135,7 +141,7 @@ zp --add-peer laptop:http://192.168.1.100:8080
 ```
 
 Each device needs to:
-1. Run the sync daemon: `zp --sync-daemon`
+1. Run the sync daemon: `zp --sync-daemon` (runs in background)
 2. Have firewall rules allowing connections on the sync port (default: 8080)
 
 ### Remote/SSH Devices
@@ -232,10 +238,11 @@ sudo ufw allow 8080
 4. Check firewall settings
 
 ### Debug Steps
-1. **Check daemon status**: Look for running sync processes
+1. **Check daemon status**: `zp --sync-daemon-status`
 2. **Verify network**: Test HTTP endpoints directly
 3. **SSH troubleshooting**: Test SSH connection manually
-4. **Logs**: Check system logs for error messages
+4. **Test peer connectivity**: `zp --test-peer peer_name`
+5. **Logs**: Check system logs for error messages
 
 ## Security Considerations
 
@@ -333,4 +340,4 @@ The sync system integrates seamlessly with existing zp functionality:
 - Clipboard history (`zp -l`) shows merged entries from all devices
 - No changes needed to existing workflows
 
-Clipboard sync runs in the background and requires no manual intervention once configured.
+Clipboard sync runs in the background as a daemon and requires no manual intervention once configured. Use `zp --sync-daemon-status` to check if the sync daemon is running.

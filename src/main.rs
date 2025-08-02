@@ -50,6 +50,16 @@ async fn main() {
         return;
     }
 
+    if zp.stop_sync_daemon {
+        handle_stop_sync_daemon();
+        return;
+    }
+
+    if zp.sync_daemon_status {
+        handle_sync_daemon_status();
+        return;
+    }
+
     if zp.sync_now {
         handle_sync_now().await;
         return;
@@ -234,5 +244,19 @@ async fn handle_test_peer(peer_id: &str) {
             eprintln!("❌ Failed to initialize sync handler: {}", e);
             process::exit(1);
         }
+    }
+}
+
+fn handle_stop_sync_daemon() {
+    if let Err(e) = SyncHandler::stop_sync_daemon() {
+        eprintln!("❌ Failed to stop sync daemon: {}", e);
+        process::exit(1);
+    }
+}
+
+fn handle_sync_daemon_status() {
+    if let Err(e) = SyncHandler::sync_daemon_status() {
+        eprintln!("❌ Failed to check sync daemon status: {}", e);
+        process::exit(1);
     }
 }

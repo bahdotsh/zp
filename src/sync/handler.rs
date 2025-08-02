@@ -1,6 +1,11 @@
 use crate::config::SyncConfig;
 use crate::sync::{protocol::SyncProtocol, server::SyncServer};
 
+use std::env;
+use std::fs::{self, File};
+use std::io::Write;
+use std::path::PathBuf;
+use std::process;
 use tokio::time::{interval, Duration};
 
 pub struct SyncHandler {
@@ -19,7 +24,93 @@ impl SyncHandler {
             return Ok(());
         }
 
-        println!("🚀 Starting zp sync daemon...");
+        // Check if sync daemon is already running
+        let pid_dir = env::var("HOME")
+            .map(|home| PathBuf::from(home).join(".zp"))
+            .unwrap_or_else(|_| PathBuf::from(".zp"));
+
+        if !pid_dir.exists() {
+            fs::create_dir_all(&pid_dir)?;
+        }
+
+        let pid_file = pid_dir.join("zp-sync-daemon.pid");
+
+        if pid_file.exists() {
+            let pid_str = fs::read_to_string(&pid_file)?;
+            if let Ok(pid) = pid_str.trim().parse::<u32>() {
+                #[cfg(unix)]
+                {
+                    let status = std::process::Command::new("kill")
+                        .arg("-0")
+                        .arg(pid.to_string())
+                        .status();
+
+                    if status.is_ok() && status.unwrap().success() {
+                        println!("🔄 Sync daemon is already running with PID {}", pid);
+                        return Ok(());
+                    }
+                }
+
+                #[cfg(not(unix))]
+                {
+                    println!("Cannot verify if sync daemon is running, assuming it's not");
+                }
+            }
+        }
+
+        // Fork to background on Unix systems
+        #[cfg(unix)]
+        {
+            use daemonize::Daemonize;
+            println!("🚀 Starting sync daemon in the background");
+
+            let pid_file = pid_dir.join("zp-sync-daemon.pid");
+
+            // Create a new daemonize process
+            let daemonize = Daemonize::new()
+                .pid_file(&pid_file)
+                .chown_pid_file(true)
+                .working_directory("/tmp")
+                .stdout(std::fs::File::create("/dev/null")?)
+                .stderr(std::fs::File::create("/dev/null")?);
+
+            match daemonize.start() {
+                Ok(_) => {
+                    // We're now in the daemon process
+                    self.run_sync_daemon_worker().await
+                }
+                Err(e) => {
+                    eprintln!("Error starting sync daemon: {}", e);
+                    Err(e.into())
+                }
+            }
+        }
+
+        // For non-Unix systems, just continue execution
+        #[cfg(not(unix))]
+        {
+            println!(
+                "🚀 Starting sync daemon in the foreground (background not supported on this OS)"
+            );
+            return self.run_sync_daemon_worker().await;
+        }
+    }
+
+    // The actual sync daemon worker process
+    async fn run_sync_daemon_worker(&self) -> Result<(), Box<dyn std::error::Error>> {
+        // Get the pid file path
+        let pid_dir = env::var("HOME")
+            .map(|home| PathBuf::from(home).join(".zp"))
+            .unwrap_or_else(|_| PathBuf::from(".zp"));
+
+        let pid_file = pid_dir.join("zp-sync-daemon.pid");
+
+        // Write current PID to file
+        let pid = process::id();
+        let mut file = File::create(&pid_file)?;
+        write!(file, "{}", pid)?;
+
+        println!("🚀 Sync daemon started with PID {}", pid);
         println!("📍 Peer ID: {}", self.config.peer_id);
         println!("🔌 Listening on port: {}", self.config.listen_port);
 
@@ -182,6 +273,102 @@ impl SyncHandler {
             }
         } else {
             println!("❌ Peer not found: {}", peer_id);
+        }
+
+        Ok(())
+    }
+
+    pub fn stop_sync_daemon() -> Result<(), Box<dyn std::error::Error>> {
+        let pid_dir = env::var("HOME")
+            .map(|home| PathBuf::from(home).join(".zp"))
+            .unwrap_or_else(|_| PathBuf::from(".zp"));
+
+        let pid_file = pid_dir.join("zp-sync-daemon.pid");
+
+        if !pid_file.exists() {
+            println!("🔄 Sync daemon is not running");
+            return Ok(());
+        }
+
+        let pid_str = fs::read_to_string(&pid_file)?;
+        if let Ok(pid) = pid_str.trim().parse::<u32>() {
+            // Send termination signal
+            #[cfg(unix)]
+            {
+                let status = std::process::Command::new("kill")
+                    .arg(pid.to_string())
+                    .status();
+
+                if status.is_ok() && status.unwrap().success() {
+                    println!("🛑 Stopped sync daemon with PID {}", pid);
+                    // Remove PID file
+                    fs::remove_file(&pid_file)?;
+                } else {
+                    println!("❌ Failed to stop sync daemon with PID {}", pid);
+                }
+            }
+
+            // For Windows
+            #[cfg(windows)]
+            {
+                use std::process::Command;
+                let status = Command::new("taskkill")
+                    .args(&["/PID", &pid.to_string(), "/F"])
+                    .status();
+
+                if status.is_ok() && status.unwrap().success() {
+                    println!("🛑 Stopped sync daemon with PID {}", pid);
+                    // Remove PID file
+                    fs::remove_file(&pid_file)?;
+                } else {
+                    println!("❌ Failed to stop sync daemon with PID {}", pid);
+                }
+            }
+        } else {
+            println!("❌ Invalid PID in sync daemon file");
+        }
+
+        Ok(())
+    }
+
+    pub fn sync_daemon_status() -> Result<(), Box<dyn std::error::Error>> {
+        let pid_dir = env::var("HOME")
+            .map(|home| PathBuf::from(home).join(".zp"))
+            .unwrap_or_else(|_| PathBuf::from(".zp"));
+
+        let pid_file = pid_dir.join("zp-sync-daemon.pid");
+
+        if !pid_file.exists() {
+            println!("🔄 Sync daemon is not running");
+            return Ok(());
+        }
+
+        let pid_str = fs::read_to_string(&pid_file)?;
+        if let Ok(pid) = pid_str.trim().parse::<u32>() {
+            // Check if process is running
+            #[cfg(unix)]
+            {
+                let status = std::process::Command::new("kill")
+                    .arg("-0")
+                    .arg(pid.to_string())
+                    .status();
+
+                if status.is_ok() && status.unwrap().success() {
+                    println!("🔄 Sync daemon is running with PID {}", pid);
+                } else {
+                    println!("🔄 Sync daemon is not running (stale PID file)");
+                    // Remove stale PID file
+                    fs::remove_file(&pid_file)?;
+                }
+            }
+
+            // For Windows or fallback
+            #[cfg(not(unix))]
+            {
+                println!("🔄 Sync daemon appears to be running with PID {}", pid);
+            }
+        } else {
+            println!("❌ Invalid PID in sync daemon file");
         }
 
         Ok(())

@@ -40,6 +40,15 @@ pub struct Zp {
     #[clap(long = "sync-daemon", help = "Start the sync daemon")]
     pub sync_daemon: bool,
 
+    #[clap(long = "stop-sync-daemon", help = "Stop the sync daemon")]
+    pub stop_sync_daemon: bool,
+
+    #[clap(
+        long = "sync-daemon-status",
+        help = "Check if the sync daemon is running"
+    )]
+    pub sync_daemon_status: bool,
+
     #[clap(long = "sync-now", help = "Sync clipboard history with peers once")]
     pub sync_now: bool,
 

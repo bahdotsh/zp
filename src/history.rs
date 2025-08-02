@@ -20,7 +20,7 @@ use ratatui::{
     Terminal,
 };
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ClipboardHistoryEntry {
     pub content: String,
     pub timestamp: String,

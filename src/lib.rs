@@ -1,9 +1,11 @@
 mod clipboard;
+pub mod config;
 pub mod daemon;
 mod file;
 pub mod history;
 mod query;
 mod run;
+pub mod sync;
 
 pub use daemon::{daemon_status, run_daemon_worker, start_daemon, stop_daemon};
 pub use query::{Query, Zp};

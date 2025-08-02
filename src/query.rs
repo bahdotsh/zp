@@ -35,6 +35,40 @@ pub struct Zp {
         help = "Check if the daemon is running"
     )]
     pub daemon_status: bool,
+
+    // Sync-related commands
+    #[clap(long = "sync-daemon", help = "Start the sync daemon")]
+    pub sync_daemon: bool,
+
+    #[clap(long = "stop-sync-daemon", help = "Stop the sync daemon")]
+    pub stop_sync_daemon: bool,
+
+    #[clap(
+        long = "sync-daemon-status",
+        help = "Check if the sync daemon is running"
+    )]
+    pub sync_daemon_status: bool,
+
+    #[clap(long = "sync-now", help = "Sync clipboard history with peers once")]
+    pub sync_now: bool,
+
+    #[clap(long = "sync-config", help = "Show sync configuration")]
+    pub sync_config: bool,
+
+    #[clap(long = "sync-enable", help = "Enable sync")]
+    pub sync_enable: bool,
+
+    #[clap(long = "sync-disable", help = "Disable sync")]
+    pub sync_disable: bool,
+
+    #[clap(long = "add-peer", help = "Add a peer (format: peer_id:endpoint)")]
+    pub add_peer: Option<String>,
+
+    #[clap(long = "remove-peer", help = "Remove a peer by ID")]
+    pub remove_peer: Option<String>,
+
+    #[clap(long = "test-peer", help = "Test connection to a peer by ID")]
+    pub test_peer: Option<String>,
 }
 
 pub struct Query {
